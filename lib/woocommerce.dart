@@ -253,12 +253,10 @@ class WooCommerce {
   /// Associated endpoint : /wp-json/wp/v2/users/me
   Future<int> fetchLoggedInUserId() async {
     _authToken = await _localDbService.getSecurityToken();
-    print("AUTHTOKEN: $_authToken");
     _urlHeader['Authentication'] = 'Bearer ' + _authToken;
+
     final response =
         await http.get(this.baseUrl + URL_USER_ME, headers: _urlHeader);
-
-    print("RESPONSE: ${response}");
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final jsonStr = json.decode(response.body);
