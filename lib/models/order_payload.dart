@@ -92,8 +92,9 @@ class WooOrderPayload {
         couponLines.add(new WooOrderPayloadCouponLines.fromJson(v));
       });
     }
-    billing =
-        json['billing'] != null ? new WooOrderPayloadBilling.fromJson(json['billing']) : null;
+    billing = json['billing'] != null
+        ? new WooOrderPayloadBilling.fromJson(json['billing'])
+        : null;
     shipping = json['shipping'] != null
         ? new WooOrderPayloadShipping.fromJson(json['shipping'])
         : null;
@@ -145,7 +146,9 @@ class WooOrderPayload {
     }
     return data;
   }
-  @override toString() => this.toJson().toString();
+
+  @override
+  toString() => this.toJson().toString();
 }
 
 class WooOrderPayloadMetaData {
@@ -232,6 +235,7 @@ class WooOrderPayloadCouponLines {
 class WooOrderPayloadBilling {
   String firstName;
   String lastName;
+  String company;
   String address1;
   String address2;
   String city;
@@ -244,6 +248,7 @@ class WooOrderPayloadBilling {
   WooOrderPayloadBilling(
       {this.firstName,
       this.lastName,
+      this.company,
       this.address1,
       this.address2,
       this.city,
@@ -256,6 +261,7 @@ class WooOrderPayloadBilling {
   WooOrderPayloadBilling.fromJson(Map<String, dynamic> json) {
     firstName = json['first_name'];
     lastName = json['last_name'];
+    company = json['company'];
     address1 = json['address_1'];
     address2 = json['address_2'];
     city = json['city'];
@@ -270,6 +276,7 @@ class WooOrderPayloadBilling {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['first_name'] = this.firstName ?? "";
     data['last_name'] = this.lastName ?? "";
+    data['company'] = this.company ?? "";
     data['address_1'] = this.address1 ?? "";
     data['address_2'] = this.address2 ?? "";
     data['city'] = this.city ?? "";
@@ -289,6 +296,7 @@ class WooOrderPayloadBilling {
 class WooOrderPayloadShipping {
   String firstName;
   String lastName;
+  String company;
   String address1;
   String address2;
   String city;
@@ -299,6 +307,7 @@ class WooOrderPayloadShipping {
   WooOrderPayloadShipping(
       {this.firstName,
       this.lastName,
+      this.company,
       this.address1,
       this.address2,
       this.city,
@@ -309,6 +318,7 @@ class WooOrderPayloadShipping {
   WooOrderPayloadShipping.fromJson(Map<String, dynamic> json) {
     firstName = json['first_name'];
     lastName = json['last_name'];
+    company = json['company'];
     address1 = json['address_1'];
     address2 = json['address_2'];
     city = json['city'];
@@ -321,6 +331,7 @@ class WooOrderPayloadShipping {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['first_name'] = this.firstName ?? "";
     data['last_name'] = this.lastName ?? "";
+    data['company'] = this.company ?? "";
     data['address_1'] = this.address1 ?? "";
     data['address_2'] = this.address2 ?? "";
     data['city'] = this.city ?? "";
@@ -362,7 +373,7 @@ class LineItems {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['product_id'] = this.productId;
-    if (this.name !=null){
+    if (this.name != null) {
       data['name'] = this.name;
     }
 
@@ -372,17 +383,19 @@ class LineItems {
     if (this.taxClass != null) {
       data['tax_class'] = this.taxClass;
     }
-    if (this.subtotal != null){
+    if (this.subtotal != null) {
       data['subtotal'] = this.subtotal;
     }
-    if (this.total != null){
+    if (this.total != null) {
       data['total'] = this.total;
     }
 
     data['quantity'] = this.quantity;
     return data;
   }
-  @override toString() => this.toJson().toString();
+
+  @override
+  toString() => this.toJson().toString();
 }
 
 class ShippingLines {
