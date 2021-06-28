@@ -32,21 +32,21 @@
  */
 
 class WooOrderPayload {
-  String paymentMethod;
-  String paymentMethodTitle;
-  bool setPaid;
-  String status;
-  String currency;
-  int customerId;
-  String customerNote;
-  int parentId;
-  List<WooOrderPayloadMetaData> metaData;
-  List<WooOrderPayloadFeeLines> feeLines;
-  List<WooOrderPayloadCouponLines> couponLines;
-  WooOrderPayloadBilling billing;
-  WooOrderPayloadShipping shipping;
-  List<LineItems> lineItems;
-  List<ShippingLines> shippingLines;
+  String? paymentMethod;
+  String? paymentMethodTitle;
+  bool? setPaid;
+  String? status;
+  String? currency;
+  int? customerId;
+  String? customerNote;
+  int? parentId;
+  List<WooOrderPayloadMetaData>? metaData;
+  List<WooOrderPayloadFeeLines>? feeLines;
+  List<WooOrderPayloadCouponLines>? couponLines;
+  WooOrderPayloadBilling? billing;
+  WooOrderPayloadShipping? shipping;
+  List<LineItems>? lineItems;
+  List<ShippingLines>? shippingLines;
 
   WooOrderPayload(
       {this.paymentMethod,
@@ -75,21 +75,21 @@ class WooOrderPayload {
     customerNote = json['customer_note'];
     parentId = json['parent_id'];
     if (json['meta_data'] != null) {
-      metaData = new List<WooOrderPayloadMetaData>();
+      metaData = <WooOrderPayloadMetaData>[];
       json['meta_data'].forEach((v) {
-        metaData.add(new WooOrderPayloadMetaData.fromJson(v));
+        metaData!.add(new WooOrderPayloadMetaData.fromJson(v));
       });
     }
     if (json['fee_lines'] != null) {
-      feeLines = new List<WooOrderPayloadFeeLines>();
+      feeLines = <WooOrderPayloadFeeLines>[];
       json['fee_lines'].forEach((v) {
-        feeLines.add(new WooOrderPayloadFeeLines.fromJson(v));
+        feeLines!.add(new WooOrderPayloadFeeLines.fromJson(v));
       });
     }
     if (json['coupon_lines'] != null) {
-      couponLines = new List<WooOrderPayloadCouponLines>();
+      couponLines = <WooOrderPayloadCouponLines>[];
       json['coupon_lines'].forEach((v) {
-        couponLines.add(new WooOrderPayloadCouponLines.fromJson(v));
+        couponLines!.add(new WooOrderPayloadCouponLines.fromJson(v));
       });
     }
     billing = json['billing'] != null
@@ -99,15 +99,15 @@ class WooOrderPayload {
         ? new WooOrderPayloadShipping.fromJson(json['shipping'])
         : null;
     if (json['line_items'] != null) {
-      lineItems = new List<LineItems>();
+      lineItems = <LineItems>[];
       json['line_items'].forEach((v) {
-        lineItems.add(new LineItems.fromJson(v));
+        lineItems!.add(new LineItems.fromJson(v));
       });
     }
     if (json['shipping_lines'] != null) {
-      shippingLines = new List<ShippingLines>();
+      shippingLines = <ShippingLines>[];
       json['shipping_lines'].forEach((v) {
-        shippingLines.add(new ShippingLines.fromJson(v));
+        shippingLines!.add(new ShippingLines.fromJson(v));
       });
     }
   }
@@ -123,26 +123,26 @@ class WooOrderPayload {
     data['customer_note'] = this.customerNote;
     data['parent_id'] = this.parentId;
     if (this.metaData != null) {
-      data['meta_data'] = this.metaData.map((v) => v.toJson()).toList();
+      data['meta_data'] = this.metaData!.map((v) => v.toJson()).toList();
     }
     if (this.feeLines != null) {
-      data['fee_lines'] = this.feeLines.map((v) => v.toJson()).toList();
+      data['fee_lines'] = this.feeLines!.map((v) => v.toJson()).toList();
     }
     if (this.couponLines != null) {
-      data['coupon_lines'] = this.couponLines.map((v) => v.toJson()).toList();
+      data['coupon_lines'] = this.couponLines!.map((v) => v.toJson()).toList();
     }
     if (this.billing != null) {
-      data['billing'] = this.billing.toJson();
+      data['billing'] = this.billing!.toJson();
     }
     if (this.shipping != null) {
-      data['shipping'] = this.shipping.toJson();
+      data['shipping'] = this.shipping!.toJson();
     }
     if (this.lineItems != null) {
-      data['line_items'] = this.lineItems.map((v) => v.toJson()).toList();
+      data['line_items'] = this.lineItems!.map((v) => v.toJson()).toList();
     }
     if (this.shippingLines != null) {
       data['shipping_lines'] =
-          this.shippingLines.map((v) => v.toJson()).toList();
+          this.shippingLines!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -152,8 +152,8 @@ class WooOrderPayload {
 }
 
 class WooOrderPayloadMetaData {
-  String key;
-  String value;
+  String? key;
+  String? value;
 
   WooOrderPayloadMetaData({this.key, this.value});
 
@@ -171,11 +171,11 @@ class WooOrderPayloadMetaData {
 }
 
 class WooOrderPayloadFeeLines {
-  String name;
-  String taxClass;
-  String taxStatus;
-  String total;
-  List<WooOrderPayloadMetaData> metaData;
+  String? name;
+  String? taxClass;
+  String? taxStatus;
+  String? total;
+  List<WooOrderPayloadMetaData>? metaData;
 
   WooOrderPayloadFeeLines(
       {this.name, this.taxClass, this.taxStatus, this.total, this.metaData});
@@ -186,9 +186,9 @@ class WooOrderPayloadFeeLines {
     taxStatus = json['tax_status'];
     total = json['total'];
     if (json['meta_data'] != null) {
-      metaData = new List<WooOrderPayloadMetaData>();
+      metaData = <WooOrderPayloadMetaData>[];
       json['meta_data'].forEach((v) {
-        metaData.add(new WooOrderPayloadMetaData.fromJson(v));
+        metaData!.add(new WooOrderPayloadMetaData.fromJson(v));
       });
     }
   }
@@ -200,24 +200,24 @@ class WooOrderPayloadFeeLines {
     data['tax_status'] = this.taxStatus;
     data['total'] = this.total;
     if (this.metaData != null) {
-      data['meta_data'] = this.metaData.map((v) => v.toJson()).toList();
+      data['meta_data'] = this.metaData!.map((v) => v.toJson()).toList();
     }
     return data;
   }
 }
 
 class WooOrderPayloadCouponLines {
-  String code;
-  List<WooOrderPayloadMetaData> metaData;
+  String? code;
+  List<WooOrderPayloadMetaData>? metaData;
 
   WooOrderPayloadCouponLines({this.code, this.metaData});
 
   WooOrderPayloadCouponLines.fromJson(Map<String, dynamic> json) {
     code = json['code'];
     if (json['meta_data'] != null) {
-      metaData = new List<WooOrderPayloadMetaData>();
+      metaData = <WooOrderPayloadMetaData>[];
       json['meta_data'].forEach((v) {
-        metaData.add(new WooOrderPayloadMetaData.fromJson(v));
+        metaData!.add(new WooOrderPayloadMetaData.fromJson(v));
       });
     }
   }
@@ -226,29 +226,27 @@ class WooOrderPayloadCouponLines {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['code'] = this.code;
     if (this.metaData != null) {
-      data['meta_data'] = this.metaData.map((v) => v.toJson()).toList();
+      data['meta_data'] = this.metaData!.map((v) => v.toJson()).toList();
     }
     return data;
   }
 }
 
 class WooOrderPayloadBilling {
-  String firstName;
-  String lastName;
-  String company;
-  String address1;
-  String address2;
-  String city;
-  String state;
-  String postcode;
-  String country;
-  String email;
-  String phone;
+  String? firstName;
+  String? lastName;
+  String? address1;
+  String? address2;
+  String? city;
+  String? state;
+  String? postcode;
+  String? country;
+  String? email;
+  String? phone;
 
   WooOrderPayloadBilling(
       {this.firstName,
       this.lastName,
-      this.company,
       this.address1,
       this.address2,
       this.city,
@@ -261,7 +259,6 @@ class WooOrderPayloadBilling {
   WooOrderPayloadBilling.fromJson(Map<String, dynamic> json) {
     firstName = json['first_name'];
     lastName = json['last_name'];
-    company = json['company'];
     address1 = json['address_1'];
     address2 = json['address_2'];
     city = json['city'];
@@ -276,7 +273,6 @@ class WooOrderPayloadBilling {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['first_name'] = this.firstName ?? "";
     data['last_name'] = this.lastName ?? "";
-    data['company'] = this.company ?? "";
     data['address_1'] = this.address1 ?? "";
     data['address_2'] = this.address2 ?? "";
     data['city'] = this.city ?? "";
@@ -294,20 +290,18 @@ class WooOrderPayloadBilling {
 }
 
 class WooOrderPayloadShipping {
-  String firstName;
-  String lastName;
-  String company;
-  String address1;
-  String address2;
-  String city;
-  String state;
-  String postcode;
-  String country;
+  String? firstName;
+  String? lastName;
+  String? address1;
+  String? address2;
+  String? city;
+  String? state;
+  String? postcode;
+  String? country;
 
   WooOrderPayloadShipping(
       {this.firstName,
       this.lastName,
-      this.company,
       this.address1,
       this.address2,
       this.city,
@@ -318,7 +312,6 @@ class WooOrderPayloadShipping {
   WooOrderPayloadShipping.fromJson(Map<String, dynamic> json) {
     firstName = json['first_name'];
     lastName = json['last_name'];
-    company = json['company'];
     address1 = json['address_1'];
     address2 = json['address_2'];
     city = json['city'];
@@ -331,7 +324,6 @@ class WooOrderPayloadShipping {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['first_name'] = this.firstName ?? "";
     data['last_name'] = this.lastName ?? "";
-    data['company'] = this.company ?? "";
     data['address_1'] = this.address1 ?? "";
     data['address_2'] = this.address2 ?? "";
     data['city'] = this.city ?? "";
@@ -343,13 +335,13 @@ class WooOrderPayloadShipping {
 }
 
 class LineItems {
-  int productId;
-  String name;
-  int variationId;
-  String taxClass;
-  String subtotal;
-  String total;
-  int quantity;
+  int? productId;
+  String? name;
+  int? variationId;
+  String? taxClass;
+  String? subtotal;
+  String? total;
+  int? quantity;
 
   LineItems(
       {this.productId,
@@ -399,9 +391,9 @@ class LineItems {
 }
 
 class ShippingLines {
-  String methodId;
-  String methodTitle;
-  String total;
+  String? methodId;
+  String? methodTitle;
+  String? total;
 
   ShippingLines({this.methodId, this.methodTitle, this.total});
 

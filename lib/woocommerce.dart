@@ -42,7 +42,6 @@ import 'dart:io';
 import "dart:math";
 import "dart:core";
 import 'package:crypto/crypto.dart' as crypto;
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:woocommerce/models/customer_download.dart';
 import 'package:woocommerce/models/payment_gateway.dart';
@@ -108,29 +107,29 @@ export 'models/user.dart' show WooUser;
 
 class WooCommerce {
   /// Parameter, [baseUrl] is the base url of your site. For example, http://me.com or https://me.com.
-  String baseUrl;
+  late String baseUrl;
 
   /// Parameter [consumerKey] is the consumer key provided by WooCommerce, e.g. `ck_12abc34n56j`.
-  String consumerKey;
+  String? consumerKey;
 
   /// Parameter [consumerSecret] is the consumer secret provided by WooCommerce, e.g. `cs_1uab8h3s3op`.
-  String consumerSecret;
+  String? consumerSecret;
 
   /// Returns if the website is https or not based on the [baseUrl] parameter.
-  bool isHttps;
+  bool? isHttps;
 
   /// Parameter(Optional) [apiPath], tells the SDK if there is a different path to your api installation.
   /// Useful if the websites woocommerce api path have been modified.
-  String apiPath;
+  late String apiPath;
 
   /// Parameter(Optional) [isDebug], tells the library if it should _printToLog debug logs.
   /// Useful if you are debuging or in development.
-  bool isDebug;
+  late bool isDebug;
 
   WooCommerce({
-    @required String baseUrl,
-    @required String consumerKey,
-    @required String consumerSecret,
+    required String baseUrl,
+    required String consumerKey,
+    required String consumerSecret,
     String apiPath = DEFAULT_WC_API_PATH,
     bool isDebug = false,
   }) {
@@ -153,56 +152,30 @@ class WooCommerce {
     }
   }
 
-  String _authToken;
-  String get authToken => _authToken;
+  String? _authToken;
+  String? get authToken => _authToken;
 
-  Uri queryUri;
+  Uri? queryUri;
   String get apiResourceUrl => queryUri.toString();
 
   // Header to be sent for JWT authourization
-  Map<String, String> _urlHeader = {'Authentication': ''};
-  String get urlHeader => _urlHeader['Authentication'] = 'Bearer ' + authToken;
+  Map<String, String> _urlHeader = {'Authorization': ''};
+  String get urlHeader => _urlHeader['Authorization'] = 'Bearer ' + authToken!;
   LocalDatabaseService _localDbService = LocalDatabaseService();
 
   /// Authenticates the user using WordPress JWT authentication and returns the access [_token] string.
   ///
   /// Associated endpoint : yourwebsite.com/wp-json/jwt-auth/v1/token
-  Future authenticateViaJWTAAM({String username, String password}) async {
-    final body = {
-      'username': username,
-      'password': password,
-      'issueJWT': 'true',
-    };
-
-    final response = await http.post(
-      this.baseUrl + URL_JWT_AAM_AUTH,
-      body: body,
-    );
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      WooJWTAAMResponse authResponse =
-          WooJWTAAMResponse.fromJson(json.decode(response.body));
-      _authToken = authResponse.token;
-
-      _localDbService.updateSecurityToken(_authToken);
-      _urlHeader['Authentication'] = 'Bearer ${_authToken}';
-      return _authToken;
-    } else {
-      throw new WooCommerceError.fromJson(json.decode(response.body));
-    }
-  }
-
-  /// Authenticates the user using WordPress JWT authentication and returns the access [_token] string.
-  ///
-  /// Associated endpoint : yourwebsite.com/wp-json/jwt-auth/v1/token
-  Future authenticateViaJWT({String username, String password}) async {
+  Future authenticateViaJWT({String? username, String? password}) async {
     final body = {
       'username': username,
       'password': password,
     };
 
     final response = await http.post(
-      this.baseUrl + URL_JWT_TOKEN,
+      Uri.parse(
+        this.baseUrl + URL_JWT_TOKEN,
+      ),
       body: body,
     );
 
@@ -220,21 +193,21 @@ class WooCommerce {
 
   /// Authenticates the user via JWT and returns a WooCommerce customer object of the current logged in customer.
   loginCustomer({
-    @required String username,
-    @required String password,
+    required String username,
+    required String password,
   }) async {
-    WooCustomer customer;
+    WooCustomer? customer;
     try {
       var response =
-          await authenticateViaJWTAAM(username: username, password: password);
+          await authenticateViaJWT(username: username, password: password);
       _printToLog('attempted token : ' + response.toString());
       if (response is String) {
-        int id = await fetchLoggedInUserId();
+        int? id = await fetchLoggedInUserId();
         customer = await getCustomerById(id: id);
       }
       return customer;
     } catch (e) {
-      return e.message;
+      return e.toString();
     }
   }
 
@@ -251,12 +224,11 @@ class WooCommerce {
   /// Fetches already authenticated user, using Jwt
   ///
   /// Associated endpoint : /wp-json/wp/v2/users/me
-  Future<int> fetchLoggedInUserId() async {
+  Future<int?> fetchLoggedInUserId() async {
     _authToken = await _localDbService.getSecurityToken();
-    _urlHeader['Authentication'] = 'Bearer ' + _authToken;
-
-    final response =
-        await http.get(this.baseUrl + URL_USER_ME, headers: _urlHeader);
+    _urlHeader['Authorization'] = 'Bearer ' + _authToken!;
+    final response = await http.get(Uri.parse(this.baseUrl + URL_USER_ME),
+        headers: _urlHeader);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final jsonStr = json.decode(response.body);
@@ -283,7 +255,7 @@ class WooCommerce {
   ///
   /// Associated endpoint : /register .
 
-  Future<bool> registerNewWpUser({WooUser user}) async {
+  Future<bool> registerNewWpUser({required WooUser user}) async {
     String url = this.baseUrl + URL_REGISTER_ENDPOINT;
 
     http.Client client = http.Client();
@@ -324,16 +296,16 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#customers
   Future<List<WooCustomer>> getCustomers(
-      {int page,
-      int perPage,
-      String search,
-      List<int> exclude,
-      List<int> include,
-      int offset,
-      String order,
-      String orderBy,
+      {int? page,
+      int? perPage,
+      String? search,
+      List<int>? exclude,
+      List<int>? include,
+      int? offset,
+      String? order,
+      String? orderBy,
       //String email,
-      String role}) async {
+      String? role}) async {
     Map<String, dynamic> payload = {};
 
     ({
@@ -359,7 +331,7 @@ class WooCommerce {
   }
 
   /// Returns a [WooCustomer], whoose [id] is specified.
-  Future<WooCustomer> getCustomerById({@required int id}) async {
+  Future<WooCustomer> getCustomerById({required int? id}) async {
     WooCustomer customer;
     _setApiResourceUrl(
       path: 'customers/' + id.toString(),
@@ -373,7 +345,7 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#customers
   Future<List<WooCustomerDownload>> getCustomerDownloads(
-      {@required int customerId}) async {
+      {required int customerId}) async {
     List<WooCustomerDownload> customerDownloads = [];
     _setApiResourceUrl(
         path: 'customers/' + customerId.toString() + '/downloads');
@@ -393,7 +365,7 @@ class WooCommerce {
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#customer-properties.
 
   Future<WooCustomer> oldUpdateCustomer(
-      {@required WooCustomer wooCustomer}) async {
+      {required WooCustomer wooCustomer}) async {
     _printToLog(
         'Updating customer With customerId : ' + wooCustomer.id.toString());
     _setApiResourceUrl(
@@ -403,7 +375,7 @@ class WooCommerce {
     return WooCustomer.fromJson(response);
   }
 
-  Future<WooCustomer> updateCustomer({@required int id, Map data}) async {
+  Future<WooCustomer> updateCustomer({required int id, Map? data}) async {
     _printToLog('Updating customer With customerId : ' + id.toString());
     _setApiResourceUrl(
       path: 'customers/' + id.toString(),
@@ -417,7 +389,7 @@ class WooCommerce {
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#customer-properties.
 
   Future<WooCustomer> deleteCustomer(
-      {@required int customerId, reassign}) async {
+      {required int customerId, reassign}) async {
     Map data = {
       'force': true,
     };
@@ -434,33 +406,33 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#products.
   Future<List<WooProduct>> getProducts(
-      {int page,
-      int perPage,
-      String search,
-      String after,
-      String before,
-      String order,
-      String orderBy,
-      String slug,
-      String status,
-      String type,
-      String sku,
-      String category,
-      String tag,
-      String shippingClass,
-      String attribute,
-      String attributeTerm,
-      String taxClass,
-      String minPrice,
-      String maxPrice,
-      String stockStatus,
-      List<int> exclude,
-      List<int> parentExclude,
-      List<int> include,
-      List<int> parent,
-      int offset,
-      bool featured,
-      bool onSale}) async {
+      {int? page,
+      int? perPage,
+      String? search,
+      String? after,
+      String? before,
+      String? order,
+      String? orderBy,
+      String? slug,
+      String? status,
+      String? type,
+      String? sku,
+      String? category,
+      String? tag,
+      String? shippingClass,
+      String? attribute,
+      String? attributeTerm,
+      String? taxClass,
+      String? minPrice,
+      String? maxPrice,
+      String? stockStatus,
+      List<int>? exclude,
+      List<int>? parentExclude,
+      List<int>? include,
+      List<int>? parent,
+      int? offset,
+      bool? featured,
+      bool? onSale}) async {
     Map<String, dynamic> payload = {};
 
     ({
@@ -510,7 +482,7 @@ class WooCommerce {
   }
 
   /// Returns a [WooProduct], with the specified [id].
-  Future<WooProduct> getProductById({@required int id}) async {
+  Future<WooProduct> getProductById({required int id}) async {
     WooProduct product;
     _setApiResourceUrl(
       path: 'products/' + id.toString(),
@@ -524,27 +496,27 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#product-variations
   Future<List<WooProductVariation>> getProductVariations(
-      {@required int productId,
-      int page,
-      int perPage,
-      String search,
-      String after,
-      String before,
-      List<int> exclude,
-      List<int> include,
-      int offset,
-      String order,
-      String orderBy,
-      List<int> parent,
-      List<int> parentExclude,
-      String slug,
-      String status,
-      String sku,
-      String taxClass,
-      bool onSale,
-      String minPrice,
-      String maxPrice,
-      String stockStatus}) async {
+      {required int productId,
+      int? page,
+      int? perPage,
+      String? search,
+      String? after,
+      String? before,
+      List<int>? exclude,
+      List<int>? include,
+      int? offset,
+      String? order,
+      String? orderBy,
+      List<int>? parent,
+      List<int>? parentExclude,
+      String? slug,
+      String? status,
+      String? sku,
+      String? taxClass,
+      bool? onSale,
+      String? minPrice,
+      String? maxPrice,
+      String? stockStatus}) async {
     Map<String, dynamic> payload = {};
 
     ({
@@ -588,7 +560,7 @@ class WooCommerce {
   /// Returns a [WooProductVariation], with the specified [productId] and [variationId].
 
   Future<WooProductVariation> getProductVariationById(
-      {@required int productId, variationId}) async {
+      {required int productId, variationId}) async {
     WooProductVariation productVariation;
     _setApiResourceUrl(
       path: 'products/' +
@@ -606,7 +578,7 @@ class WooCommerce {
   /// Returns a List[WooProductVariation], with the specified [productId] only.
 
   Future<List<WooProductVariation>> getProductVariationsByProductId(
-      {@required int productId}) async {
+      {required int productId}) async {
     List<WooProductVariation> productVariations = [];
     _setApiResourceUrl(
         path: 'products/' + productId.toString() + '/variations/');
@@ -641,7 +613,7 @@ class WooCommerce {
   /// Returns a [WooProductAttribute], with the specified [attributeId].
 
   Future<WooProductAttribute> getProductAttributeById(
-      {@required int attributeId}) async {
+      {required int attributeId}) async {
     WooProductAttribute productAttribute;
     _setApiResourceUrl(
       path: 'products/attributes/' + attributeId.toString(),
@@ -657,18 +629,18 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#product-attribute-terms
   Future<List<WooProductAttributeTerm>> getProductAttributeTerms(
-      {@required int attributeId,
-      int page,
-      int perPage,
-      String search,
-      List<int> exclude,
-      List<int> include,
-      String order,
-      String orderBy,
-      bool hideEmpty,
-      int parent,
-      int product,
-      String slug}) async {
+      {required int attributeId,
+      int? page,
+      int? perPage,
+      String? search,
+      List<int>? exclude,
+      List<int>? include,
+      String? order,
+      String? orderBy,
+      bool? hideEmpty,
+      int? parent,
+      int? product,
+      String? slug}) async {
     Map<String, dynamic> payload = {};
 
     ({
@@ -702,7 +674,7 @@ class WooCommerce {
   /// Returns a [WooProductAttributeTerm], with the specified [attributeId] and [termId].
 
   Future<WooProductAttributeTerm> getProductAttributeTermById(
-      {@required int attributeId, termId}) async {
+      {required int attributeId, termId}) async {
     WooProductAttributeTerm productAttributeTerm;
     _setApiResourceUrl(
       path: 'products/attributes/' +
@@ -722,17 +694,17 @@ class WooCommerce {
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#product-categories
 
   Future<List<WooProductCategory>> getProductCategories(
-      {int page,
-      int perPage,
-      String search,
+      {int? page,
+      int? perPage,
+      String? search,
       //List<int> exclude,
       //List<int> include,
-      String order,
-      String orderBy,
-      bool hideEmpty,
-      int parent,
-      int product,
-      String slug}) async {
+      String? order,
+      String? orderBy,
+      bool? hideEmpty,
+      int? parent,
+      int? product,
+      String? slug}) async {
     Map<String, dynamic> payload = {};
 
     ({
@@ -761,7 +733,7 @@ class WooCommerce {
   /// Returns a [WooProductCategory], with the specified [categoryId].
 
   Future<WooProductCategory> getProductCategoryById(
-      {@required int categoryId}) async {
+      {required int categoryId}) async {
     WooProductCategory productCategory;
     _setApiResourceUrl(
       path: 'products/categories/' + categoryId.toString(),
@@ -776,17 +748,17 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#product-shipping-classes
   Future<List<WooProductShippingClass>> getProductShippingClasses(
-      {int page,
-      int perPage,
-      String search,
-      List<int> exclude,
-      List<int> include,
-      int offset,
-      String order,
-      String orderBy,
-      bool hideEmpty,
-      int product,
-      String slug}) async {
+      {int? page,
+      int? perPage,
+      String? search,
+      List<int>? exclude,
+      List<int>? include,
+      int? offset,
+      String? order,
+      String? orderBy,
+      bool? hideEmpty,
+      int? product,
+      String? slug}) async {
     Map<String, dynamic> payload = {};
     ({
       'page': page,
@@ -820,7 +792,7 @@ class WooCommerce {
   /// Returns a [WooProductShippingClass], with the specified [id].
 
   Future<WooProductShippingClass> getProductShippingClassById(
-      {@required int id}) async {
+      {required int id}) async {
     WooProductShippingClass productShippingClass;
     _setApiResourceUrl(
       path: 'products/shipping_classes/' + id.toString(),
@@ -835,17 +807,17 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#product-tags
   Future<List<WooProductTag>> getProductTags(
-      {int page,
-      int perPage,
-      String search,
+      {int? page,
+      int? perPage,
+      String? search,
       //List<int> exclude,
       //List<int> include,
-      int offset,
-      String order,
-      String orderBy,
-      bool hideEmpty,
-      int product,
-      String slug}) async {
+      int? offset,
+      String? order,
+      String? orderBy,
+      bool? hideEmpty,
+      int? product,
+      String? slug}) async {
     Map<String, dynamic> payload = {};
     ({
       'page': page, 'per_page': perPage, 'search': search,
@@ -871,7 +843,7 @@ class WooCommerce {
 
   /// Returns a [WooProductTag], with the specified [id].
 
-  Future<WooProductTag> getProductTagById({@required int id}) async {
+  Future<WooProductTag> getProductTagById({required int id}) async {
     WooProductTag productTag;
     _setApiResourceUrl(
       path: 'products/tags/' + id.toString(),
@@ -886,13 +858,13 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#product-reviews
   Future<WooProductReview> createProductReview(
-      {@required int productId,
-      int status,
-      @required String reviewer,
-      @required String reviewerEmail,
-      @required String review,
-      int rating,
-      bool verified}) async {
+      {required int productId,
+      int? status,
+      required String reviewer,
+      required String reviewerEmail,
+      required String review,
+      int? rating,
+      bool? verified}) async {
     Map<String, dynamic> payload = {};
 
     ({
@@ -921,21 +893,21 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#product-reviews
   Future<List<WooProductReview>> getProductReviews(
-      {int page,
-      int perPage,
-      String search,
-      String after,
-      String before,
+      {int? page,
+      int? perPage,
+      String? search,
+      String? after,
+      String? before,
       //List<int> exclude,
       //List<int> include,
-      int offset,
-      String order,
-      String orderBy,
-      List<int> reviewer,
+      int? offset,
+      String? order,
+      String? orderBy,
+      List<int>? reviewer,
       //List<int> reviewerExclude,
       //List<String> reviewerEmail,
-      List<int> product,
-      String status}) async {
+      List<int>? product,
+      String? status}) async {
     Map<String, dynamic> payload = {};
 
     ({
@@ -968,8 +940,7 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#product-reviews
 
-  Future<WooProductReview> getProductReviewById(
-      {@required int reviewId}) async {
+  Future<WooProductReview> getProductReviewById({required int reviewId}) async {
     WooProductReview productReview;
     _setApiResourceUrl(
       path: 'products/reviews/' + reviewId.toString(),
@@ -985,7 +956,7 @@ class WooCommerce {
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#product-reviews
 
   Future<WooProductReview> updateProductReview(
-      {@required WooProductReview productReview}) async {
+      {required WooProductReview productReview}) async {
     _printToLog('Updating product review With reviewId : ' +
         productReview.id.toString());
     _setApiResourceUrl(
@@ -999,7 +970,7 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#product-reviews
 
-  Future<WooProductReview> deleteProductReview({@required int reviewId}) async {
+  Future<WooProductReview> deleteProductReview({required int reviewId}) async {
     Map data = {
       'force': true,
     };
@@ -1032,18 +1003,18 @@ class WooCommerce {
   ///
 
   Future<WooCartItem> addToMyCart(
-      {@required String itemId,
-      @required String quantity,
-      List<WooProductVariation> variations}) async {
+      {required String itemId,
+      required String quantity,
+      List<WooProductVariation>? variations}) async {
     Map<String, dynamic> data = {
       'id': itemId,
       'quantity': quantity,
     };
     if (variations != null) data['variations'] = variations;
     await getAuthTokenFromDb();
-    _urlHeader['Authentication'] = 'Bearer ' + _authToken;
+    _urlHeader['Authorization'] = 'Bearer ' + _authToken!;
     final response = await http.post(
-        this.baseUrl + URL_STORE_API_PATH + 'cart/items',
+        Uri.parse(this.baseUrl + URL_STORE_API_PATH + 'cart/items'),
         headers: _urlHeader,
         body: data);
 
@@ -1065,9 +1036,9 @@ class WooCommerce {
 
   Future<List<WooCartItem>> getMyCartItems() async {
     await getAuthTokenFromDb();
-    _urlHeader['Authentication'] = 'Bearer ' + _authToken;
+    _urlHeader['Authorization'] = 'Bearer ' + _authToken!;
     final response = await http.get(
-        this.baseUrl + URL_STORE_API_PATH + 'cart/items',
+        Uri.parse(this.baseUrl + URL_STORE_API_PATH + 'cart/items'),
         headers: _urlHeader);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -1094,9 +1065,10 @@ class WooCommerce {
 
   Future<WooCart> getMyCart() async {
     await getAuthTokenFromDb();
-    _urlHeader['Authentication'] = 'Bearer ' + _authToken;
+    _urlHeader['Authorization'] = 'Bearer ' + _authToken!;
     WooCart cart;
-    final response = await http.get(this.baseUrl + URL_STORE_API_PATH + 'cart',
+    final response = await http.get(
+        Uri.parse(this.baseUrl + URL_STORE_API_PATH + 'cart'),
         headers: _urlHeader);
     _printToLog('response gotten : ' + response.toString());
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -1111,16 +1083,16 @@ class WooCommerce {
     }
   }
 
-  Future deleteMyCartItem({@required String key}) async {
+  Future deleteMyCartItem({required String key}) async {
     Map<String, dynamic> data = {
       'key': key,
     };
     _printToLog('Deleting CartItem With Payload : ' + data.toString());
     await getAuthTokenFromDb();
-    _urlHeader['Authentication'] = 'Bearer ' + _authToken;
+    _urlHeader['Authorization'] = 'Bearer ' + _authToken!;
 
     final http.Response response = await http.delete(
-      this.baseUrl + URL_STORE_API_PATH + 'cart/items/' + key,
+      Uri.parse(this.baseUrl + URL_STORE_API_PATH + 'cart/items/' + key),
       headers: _urlHeader,
     );
     _printToLog('response of delete cart  : ' + response.body.toString());
@@ -1142,10 +1114,10 @@ class WooCommerce {
 
   Future deleteAllMyCartItems() async {
     await getAuthTokenFromDb();
-    _urlHeader['Authentication'] = 'Bearer ' + _authToken;
+    _urlHeader['Authorization'] = 'Bearer ' + _authToken!;
 
     final http.Response response = await http.delete(
-      this.baseUrl + URL_STORE_API_PATH + 'cart/items/',
+      Uri.parse(this.baseUrl + URL_STORE_API_PATH + 'cart/items/'),
       headers: _urlHeader,
     );
     _printToLog('response of delete cart  : ' + response.body.toString());
@@ -1163,10 +1135,10 @@ class WooCommerce {
 
   Future<WooCartItem> getMyCartItemByKey(String key) async {
     await getAuthTokenFromDb();
-    _urlHeader['Authentication'] = 'Bearer ' + _authToken;
+    _urlHeader['Authorization'] = 'Bearer ' + _authToken!;
     WooCartItem cartItem;
     final response = await http.get(
-        this.baseUrl + URL_STORE_API_PATH + 'cart/items/' + key,
+        Uri.parse(this.baseUrl + URL_STORE_API_PATH + 'cart/items/' + key),
         headers: _urlHeader);
     _printToLog('response gotten : ' + response.toString());
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -1182,10 +1154,10 @@ class WooCommerce {
   }
 
   Future<WooCartItem> updateMyCartItemByKey(
-      {@required String key,
-      @required int id,
-      @required int quantity,
-      List<WooProductVariation> variations}) async {
+      {required String key,
+      required int id,
+      required int quantity,
+      List<WooProductVariation>? variations}) async {
     Map<String, dynamic> data = {
       'key': key,
       'id': id.toString(),
@@ -1193,9 +1165,9 @@ class WooCommerce {
     };
     if (variations != null) data['variations'] = variations;
     await getAuthTokenFromDb();
-    _urlHeader['Authentication'] = 'Bearer ' + _authToken;
+    _urlHeader['Authorization'] = 'Bearer ' + _authToken!;
     final response = await http.put(
-        this.baseUrl + URL_STORE_API_PATH + 'cart/items/' + key,
+        Uri.parse(this.baseUrl + URL_STORE_API_PATH + 'cart/items/' + key),
         headers: _urlHeader,
         body: data);
 
@@ -1227,23 +1199,23 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#orders
   Future<List<WooOrder>> getOrders(
-      {int page,
-      int perPage,
-      String search,
-      String after,
-      String before,
-      List<int> exclude,
-      List<int> include,
-      int offset,
-      String order,
-      String orderBy,
-      List<int> parent,
-      List<int> parentExclude,
-      List<String>
+      {int? page,
+      int? perPage,
+      String? search,
+      String? after,
+      String? before,
+      List<int>? exclude,
+      List<int>? include,
+      int? offset,
+      String? order,
+      String? orderBy,
+      List<int>? parent,
+      List<int>? parentExclude,
+      List<String>?
           status, // Options: any, pending, processing, on-hold, completed, cancelled, refunded, failed and trash. Default is any.
-      int customer,
-      int product,
-      int dp}) async {
+      int? customer,
+      int? product,
+      int? dp}) async {
     Map<String, dynamic> payload = {};
 
     ({
@@ -1280,7 +1252,7 @@ class WooCommerce {
 
   /// Returns a [WooOrder] object that matches the provided [id].
 
-  Future<WooOrder> getOrderById(int id, {String dp}) async {
+  Future<WooOrder> getOrderById(int id, {String? dp}) async {
     Map<String, dynamic> payload = {};
     if (dp != null) payload["dp"] = dp;
     _setApiResourceUrl(
@@ -1302,7 +1274,7 @@ class WooCommerce {
     return WooOrder.fromJson(response);
   }
 
-  Future<WooOrder> updateOrder({Map orderMap, int id}) async {
+  Future<WooOrder> updateOrder({Map? orderMap, int? id}) async {
     _printToLog('Updating Order With Payload : ' + orderMap.toString());
     _setApiResourceUrl(
       path: 'orders/' + id.toString(),
@@ -1315,7 +1287,7 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#orders.
 
-  Future<WooOrder> deleteOrder({@required int orderId}) async {
+  Future<WooOrder> deleteOrder({required int orderId}) async {
     Map data = {
       'force': true,
     };
@@ -1331,12 +1303,12 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#coupons.
   Future<WooCoupon> createCoupon({
-    String code,
-    String discountType,
-    String amount,
-    bool individualUse,
-    bool excludeSaleItems,
-    String minimumAmount,
+    String? code,
+    String? discountType,
+    String? amount,
+    bool? individualUse,
+    bool? excludeSaleItems,
+    String? minimumAmount,
   }) async {
     Map<String, dynamic> payload = {};
 
@@ -1363,18 +1335,18 @@ class WooCommerce {
   /// Returns a list of all [WooCoupon], with filter options.
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#coupons
-  Future<List<WooCoupon>> getCoupons({
-    int page,
-    int perPage,
-    String search,
-    String after,
-    String before,
+  Future<List<WooCoupon>?> getCoupons({
+    int? page,
+    int? perPage,
+    String? search,
+    String? after,
+    String? before,
     //List<int> exclude,
     //List<int> include,
-    int offset,
-    String order,
-    String orderBy,
-    String code,
+    int? offset,
+    String? order,
+    String? orderBy,
+    String? code,
   }) async {
     Map<String, dynamic> payload = {};
     ({
@@ -1386,14 +1358,14 @@ class WooCommerce {
     }).forEach((k, v) {
       if (v != null) payload[k] = v.toString();
     });
-    List<WooCoupon> coupons;
+    List<WooCoupon>? coupons;
     _printToLog('Getting Coupons With Payload : ' + payload.toString());
     _setApiResourceUrl(path: 'coupons', queryParameters: payload);
     final response = await get(queryUri.toString());
     for (var c in response) {
       var coupon = WooCoupon.fromJson(c);
       _printToLog('prod gotten here : ' + order.toString());
-      coupons.add(coupon);
+      coupons!.add(coupon);
     }
     return coupons;
   }
@@ -1409,12 +1381,12 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#tax-rates.
   Future<List<WooTaxRate>> getTaxRates(
-      {int page,
-      int perPage,
-      int offset,
-      String order,
-      String orderBy,
-      String taxClass}) async {
+      {int? page,
+      int? perPage,
+      int? offset,
+      String? order,
+      String? orderBy,
+      String? taxClass}) async {
     Map<String, dynamic> payload = {};
 
     ({
@@ -1516,7 +1488,7 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#shipping-zone-locations.
   Future<List<WooShippingZoneMethod>> getAllShippingZoneMethods(
-      {@required int shippingZoneId}) async {
+      {required int shippingZoneId}) async {
     List<WooShippingZoneMethod> shippingZoneMethods = [];
     _setApiResourceUrl(
         path: 'shipping/zones/' + shippingZoneId.toString() + '/methods');
@@ -1533,7 +1505,7 @@ class WooCommerce {
   /// Returns a [WooShippingZoneMethod] object from the specified [zoneId] and [methodId].
 
   Future<WooShippingZoneMethod> getAShippingMethodFromZone(
-      {@required int zoneId, @required int methodId}) async {
+      {required int zoneId, required int methodId}) async {
     WooShippingZoneMethod shippingZoneMethod;
     _setApiResourceUrl(
         path: 'shipping/zones/' +
@@ -1550,7 +1522,7 @@ class WooCommerce {
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#orders.
 
   Future<WooShippingZoneMethod> deleteShippingZoneMethod(
-      {@required int zoneId, @required int methodId}) async {
+      {required int zoneId, required int methodId}) async {
     Map data = {
       'force': true,
     };
@@ -1569,7 +1541,7 @@ class WooCommerce {
   ///
   /// Related endpoint: https://woocommerce.github.io/woocommerce-rest-api-docs/#shipping-zone-locations.
   Future<List<WooShippingZoneLocation>> getShippingZoneLocations(
-      {@required int shippingZoneId}) async {
+      {required int shippingZoneId}) async {
     List<WooShippingZoneLocation> shippingZoneLocations = [];
     _setApiResourceUrl(
         path: 'shipping/zones/' + shippingZoneId.toString() + '/locations');
@@ -1618,7 +1590,7 @@ class WooCommerce {
     _printToLog(
         'Updating Payment Gateway With Payload : ' + gateway.toString());
     _setApiResourceUrl(
-      path: 'payment_gateways/' + gateway.id,
+      path: 'payment_gateways/' + gateway.id!,
     );
     final response = await put(queryUri.toString(), gateway.toJson());
     return WooPaymentGateway.fromJson(response);
@@ -1629,8 +1601,8 @@ class WooCommerce {
   /// if [isHttps] is true we just return the URL with
   /// [consumerKey] and [consumerSecret] as query parameters
   String _getOAuthURL(String requestMethod, String endpoint) {
-    String consumerKey = this.consumerKey;
-    String consumerSecret = this.consumerSecret;
+    String? consumerKey = this.consumerKey;
+    String? consumerSecret = this.consumerSecret;
 
     String token = "";
     _printToLog('oauth token = : ' + token);
@@ -1641,13 +1613,13 @@ class WooCommerce {
       return url +
           (containsQueryParams == true
               ? "&consumer_key=" +
-                  this.consumerKey +
+                  this.consumerKey! +
                   "&consumer_secret=" +
-                  this.consumerSecret
+                  this.consumerSecret!
               : "?consumer_key=" +
-                  this.consumerKey +
+                  this.consumerKey! +
                   "&consumer_secret=" +
-                  this.consumerSecret);
+                  this.consumerSecret!);
     }
 
     Random rand = Random();
@@ -1662,7 +1634,7 @@ class WooCommerce {
     int timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
     String parameters = "oauth_consumer_key=" +
-        consumerKey +
+        consumerKey! +
         "&oauth_nonce=" +
         nonce +
         "&oauth_signature_method=HMAC-SHA1&oauth_timestamp=" +
@@ -1701,7 +1673,7 @@ class WooCommerce {
         "&" +
         Uri.encodeQueryComponent(parameterString);
 
-    String signingKey = consumerSecret + "&" + token;
+    String signingKey = consumerSecret! + "&" + token;
     crypto.Hmac hmacSha1 =
         crypto.Hmac(crypto.sha1, utf8.encode(signingKey)); // HMAC-SHA1
 
@@ -1762,8 +1734,8 @@ class WooCommerce {
 
   // Sets the Uri for an endpoint.
   String _setApiResourceUrl({
-    @required String path,
-    String host,
+    required String path,
+    String? host,
     port,
     queryParameters,
     bool isShop = false,
@@ -1818,7 +1790,7 @@ class WooCommerce {
     headers.putIfAbsent('Accept', () => 'application/json charset=utf-8');
     // 'Authorization': _bearerToken,
     try {
-      final http.Response response = await http.get(url);
+      final http.Response response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }
@@ -1868,7 +1840,7 @@ class WooCommerce {
 
   /// Make a custom put request to Woocommerce, using WooCommerce SDK.
 
-  Future<dynamic> put(String endPoint, Map data) async {
+  Future<dynamic> put(String endPoint, Map? data) async {
     String url = this._getOAuthURL("PUT", endPoint);
 
     http.Client client = http.Client();
@@ -1886,7 +1858,7 @@ class WooCommerce {
 
   /// Make a custom delete request to Woocommerce, using WooCommerce SDK.
 
-  Future<dynamic> Oldelete(String endPoint, Map data) async {
+  Future<dynamic> oldelete(String endPoint, Map data) async {
     String url = this._getOAuthURL("DELETE", endPoint);
 
     http.Client client = http.Client();
@@ -1904,7 +1876,7 @@ class WooCommerce {
     return dataResponse;
   }
 
-  Future<dynamic> delete(String endPoint, Map data, {String aUrl}) async {
+  Future<dynamic> delete(String endPoint, Map data, {String? aUrl}) async {
     String realUrl;
     final url = this._getOAuthURL("DELETE", endPoint);
     if (aUrl == null) {
@@ -1942,7 +1914,7 @@ class QueryString {
 
     // Go through all the matches and build the result map.
     for (Match match in search.allMatches(query)) {
-      result[decode(match.group(1))] = decode(match.group(2));
+      result[decode(match.group(1)!)] = decode(match.group(2)!);
     }
 
     return result;
