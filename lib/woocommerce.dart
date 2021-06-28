@@ -42,6 +42,7 @@ import 'dart:io';
 import "dart:math";
 import "dart:core";
 import 'package:crypto/crypto.dart' as crypto;
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:woocommerce/models/customer_download.dart';
 import 'package:woocommerce/models/payment_gateway.dart';
@@ -159,9 +160,37 @@ class WooCommerce {
   String get apiResourceUrl => queryUri.toString();
 
   // Header to be sent for JWT authourization
-  Map<String, String> _urlHeader = {'Authorization': ''};
-  String get urlHeader => _urlHeader['Authorization'] = 'Bearer ' + authToken!;
+  Map<String, String> _urlHeader = {'Authentication': ''};
+  String get urlHeader => _urlHeader['Authentication'] = 'Bearer ' + authToken!;
   LocalDatabaseService _localDbService = LocalDatabaseService();
+
+  /// Authenticates the user using WordPress JWT authentication and returns the access [_token] string.
+  ///
+  /// Associated endpoint : yourwebsite.com/wp-json/jwt-auth/v1/token
+  Future authenticateViaJWTAAM({String? username, String? password}) async {
+    final body = {
+      'username': username,
+      'password': password,
+      'issueJWT': 'true',
+    };
+
+    final response = await http.post(
+      Uri.parse(this.baseUrl + URL_JWT_AAM_AUTH),
+      body: body,
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      WooJWTAAMResponse authResponse =
+          WooJWTAAMResponse.fromJson(json.decode(response.body));
+      _authToken = authResponse.token;
+
+      _localDbService.updateSecurityToken(_authToken);
+      _urlHeader['Authentication'] = 'Bearer ${_authToken}';
+      return _authToken;
+    } else {
+      throw new WooCommerceError.fromJson(json.decode(response.body));
+    }
+  }
 
   /// Authenticates the user using WordPress JWT authentication and returns the access [_token] string.
   ///
@@ -199,7 +228,7 @@ class WooCommerce {
     WooCustomer? customer;
     try {
       var response =
-          await authenticateViaJWT(username: username, password: password);
+          await authenticateViaJWTAAM(username: username, password: password);
       _printToLog('attempted token : ' + response.toString());
       if (response is String) {
         int? id = await fetchLoggedInUserId();
@@ -226,7 +255,7 @@ class WooCommerce {
   /// Associated endpoint : /wp-json/wp/v2/users/me
   Future<int?> fetchLoggedInUserId() async {
     _authToken = await _localDbService.getSecurityToken();
-    _urlHeader['Authorization'] = 'Bearer ' + _authToken!;
+    _urlHeader['Authentication'] = 'Bearer ' + _authToken!;
     final response = await http.get(Uri.parse(this.baseUrl + URL_USER_ME),
         headers: _urlHeader);
 

@@ -31,6 +31,35 @@
 
  */
 
+class WooJWTAAMResponse {
+  String? token;
+  String? userEmail;
+  String? userNicename;
+  String? userDisplayName;
+
+  WooJWTAAMResponse(
+      {this.token, this.userEmail, this.userNicename, this.userDisplayName});
+
+  WooJWTAAMResponse.fromJson(Map<String, dynamic> json) {
+    token = json['jwt']['token'];
+    userEmail = json['user']['data']['user_email'];
+    userNicename = json['user']['data']['user_nicename'];
+    userDisplayName = json['user']['data']['user_display_name'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['jwt']['token'] = this.token;
+    data['user']['data']['user_email'] = this.userEmail;
+    data['user']['data']['user_nicename'] = this.userNicename;
+    data['user']['data']['user_display_name'] = this.userDisplayName;
+    return data;
+  }
+
+  @override
+  toString() => this.toJson().toString();
+}
+
 class WooJWTResponse {
   String? token;
   String? userEmail;
@@ -55,5 +84,7 @@ class WooJWTResponse {
     data['user_display_name'] = this.userDisplayName;
     return data;
   }
-  @override toString() => this.toJson().toString();
+
+  @override
+  toString() => this.toJson().toString();
 }
