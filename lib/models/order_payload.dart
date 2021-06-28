@@ -237,6 +237,7 @@ class WooOrderPayloadBilling {
   String? lastName;
   String? address1;
   String? address2;
+  String? company;
   String? city;
   String? state;
   String? postcode;
@@ -249,6 +250,7 @@ class WooOrderPayloadBilling {
       this.lastName,
       this.address1,
       this.address2,
+      this.company,
       this.city,
       this.state,
       this.postcode,
@@ -261,6 +263,7 @@ class WooOrderPayloadBilling {
     lastName = json['last_name'];
     address1 = json['address_1'];
     address2 = json['address_2'];
+    company = json['company'];
     city = json['city'];
     state = json['state'];
     postcode = json['postcode'];
@@ -275,6 +278,7 @@ class WooOrderPayloadBilling {
     data['last_name'] = this.lastName ?? "";
     data['address_1'] = this.address1 ?? "";
     data['address_2'] = this.address2 ?? "";
+    data['company'] = this.company ?? "";
     data['city'] = this.city ?? "";
     data['state'] = this.state ?? "";
     data['postcode'] = this.postcode ?? "";
@@ -294,6 +298,7 @@ class WooOrderPayloadShipping {
   String? lastName;
   String? address1;
   String? address2;
+  String? company;
   String? city;
   String? state;
   String? postcode;
@@ -304,6 +309,7 @@ class WooOrderPayloadShipping {
       this.lastName,
       this.address1,
       this.address2,
+      this.company,
       this.city,
       this.state,
       this.postcode,
@@ -314,6 +320,7 @@ class WooOrderPayloadShipping {
     lastName = json['last_name'];
     address1 = json['address_1'];
     address2 = json['address_2'];
+    company = json['company'];
     city = json['city'];
     state = json['state'];
     postcode = json['postcode'];
@@ -326,6 +333,7 @@ class WooOrderPayloadShipping {
     data['last_name'] = this.lastName ?? "";
     data['address_1'] = this.address1 ?? "";
     data['address_2'] = this.address2 ?? "";
+    data['company'] = this.company ?? "";
     data['city'] = this.city ?? "";
     data['state'] = this.state ?? "";
     data['postcode'] = this.postcode ?? "";
