@@ -492,7 +492,7 @@ class Shipping {
 class MetaData {
   int? id;
   String? key;
-  String? value;
+  dynamic value;
 
   MetaData({this.id, this.key, this.value});
 
