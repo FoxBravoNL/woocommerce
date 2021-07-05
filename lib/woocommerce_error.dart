@@ -50,7 +50,7 @@ class WooCommerceError {
 
   @override
   String toString() {
-    return "WooCommerce Error!\ncode: $code\nmessage: $message\nstatus: ${data!.status}";
+    return "WooCommerce Error!\ncode: $code\nmessage: $message\nstatus: ${data?.status ?? "unknown"}";
   }
 }
 
